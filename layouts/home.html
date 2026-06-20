@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+{{- $defaultColor := .Site.Params.defaultColor | default "dark" -}}
+<html lang="{{ .Site.LanguageCode | default .Site.Language.Lang }}" class="{{ $defaultColor }}">
+{{- partial "head.html" . -}}
+
+<body data-theme="{{ $defaultColor }}" class="notransition">
+    {{- partial "scriptsBodyStart.html" . -}}
+
+    <div class="mountain-scene" aria-hidden="true">
+        <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 400 L0 260 L80 240 L160 250 L240 200 L320 180 L400 195 L480 140 L560 160 L640 110 L720 130 L800 80 L880 100 L960 60 L1040 90 L1120 70 L1200 110 L1280 90 L1360 120 L1440 100 L1440 400 Z" fill="rgba(0, 184, 255, 0.08)" />
+            <path d="M0 400 L0 310 L80 300 L160 305 L240 270 L320 275 L400 245 L480 250 L560 210 L640 220 L720 190 L800 200 L880 175 L960 185 L1040 165 L1120 180 L1200 160 L1280 170 L1360 150 L1440 160 L1440 400 Z" fill="rgba(0, 184, 255, 0.04)" />
+            <path d="M640 400 L720 190 L800 200 L880 400 Z" fill="rgba(0, 184, 255, 0.02)" />
+        </svg>
+    </div>
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+    <!-- Background image rotator -->
+    <div id="bg-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;background:var(--bg-primary);"></div>
+    <div id="bg-overlay2" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 2s ease;"></div>
+    <script>
+    (function(){
+        var s=['mountain','forest','lake','ocean','aurora','valley','stars','river','clouds','night','landscape'];
+        var i=0,e1=document.getElementById('bg-overlay'),e2=document.getElementById('bg-overlay2'),a=1;
+        function b(){
+            var u='url(https://picsum.photos/seed/'+s[i]+'/1920/1080)';
+            if(a===1){e2.style.backgroundImage=u;e2.style.opacity='0.25';e1.style.opacity='0';a=2;}
+            else{e1.style.backgroundImage=u;e1.style.opacity='0.25';e2.style.opacity='0';a=1;}
+            i=(i+1)%s.length;
+        }
+        b();setInterval(b,20000);
+    })();
+    </script>
+
+    {{- partial "header.html" . -}}
+    <div class="wrapper">
+        <div class="zephyr-hero">
+            {{ $logo := resources.Get "logo.png" }}
+            {{ with $logo }}{{ $logoResized := $logo.Resize "192x192 center" }}
+            <img src="{{ $logoResized.RelPermalink }}" alt="ZEPHYR" class="zephyr-hero-logo">
+            {{ end }}
+            <h1>{{ .Site.Params.author.name }}</h1>
+            <div class="typing-line">
+                <span id="typewriter"></span><span class="cursor"></span>
+            </div>
+            <p class="zephyr-hero-sub">{{ .Site.Params.description }}</p>
+        </div>
+
+        <div class="quick-entries">
+            <a href="{{ "/growth/" | relLangURL }}" class="quick-entry-card">
+                <div class="qe-icon">📈</div>
+                <div class="qe-title">{{ if eq .Lang "zh-cn" }}成长轨迹{{ else }}Growth{{ end }}</div>
+                <div class="qe-desc">{{ if eq .Lang "zh-cn" }}大一这一年{{ else }}My freshman year{{ end }}</div>
+            </a>
+            <a href="{{ "/projects/" | relLangURL }}" class="quick-entry-card">
+                <div class="qe-icon">⚡</div>
+                <div class="qe-title">{{ if eq .Lang "zh-cn" }}项目作品{{ else }}Projects{{ end }}</div>
+                <div class="qe-desc">{{ if eq .Lang "zh-cn" }}我的开源与开发{{ else }}Open source & dev{{ end }}</div>
+            </a>
+        </div>
+
+        <h3 class="posts-item-note" style="color:var(--text-primary);font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.05em;border-bottom:1px solid var(--border-color);padding-bottom:0.5rem;margin-bottom:0.8rem;">
+            {{ if eq .Lang "zh-cn" }}📝 最新文章{{ else }}📝 Latest Posts{{ end }}
+        </h3>
+        <div class="blog-card-grid">
+            {{ $pagesToShow := where .Site.RegularPages "Type" "in" site.Params.mainSections }}
+            {{ $posts := $pagesToShow.ByDate.Reverse }}
+            {{ if $posts }}
+            {{ range first 5 $posts }}
+            <a href="{{ .RelPermalink }}" class="blog-card">
+                <div class="blog-card-info">
+                    <h4>{{ .Title }}</h4>
+                    {{ with .Description }}<p>{{ . }}</p>{{ end }}
+                </div>
+                <span class="blog-card-date">{{ .Date.Format "2006.01.02" }}</span>
+            </a>
+            {{ end }}
+            {{ else }}
+            <p style="color:var(--text-dim);font-size:0.82rem;text-align:center;padding:2rem 0;">{{ if eq .Lang "zh-cn" }}还没有文章，马上就来……{{ else }}No posts yet, coming soon…{{ end }}</p>
+            {{ end }}
+        </div>
+    </div>
+    {{- partial "footer.html" . -}}
+    {{- partial "scriptsBodyEnd.html" . -}}
+
+    {{- partial "command-palette.html" . }}
+
+    <script>
+    (function(){
+        var el=document.getElementById('typewriter');if(!el)return;
+        var p=['大一 · CS · 码农修炼中','Freshman · CS · Code & Create','Java + AI Agent 探索者','Hermes 开源贡献者','永远在路上 🚀'];
+        var i=0,j=0,d=false;
+        function t(){
+            var c=p[i];
+            d?el.textContent=c.substring(0,j-1):el.textContent=c.substring(0,j+1);
+            d?j--:j++;
+            if(!d&&j===c.length){d=true;setTimeout(t,2000);return;}
+            if(d&&j===0){d=false;i=(i+1)%p.length;setTimeout(t,400);return;}
+            setTimeout(t,d?30:60);
+        }
+        t();
+    })();
+    </script>
+
+    <script>
+    (function(){
+        var c=document.getElementById('particle-canvas');if(!c)return;
+        var ctx=c.getContext('2d'),w,h,ps=[];
+        function r(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+        r();window.addEventListener('resize',r);
+        function init(){ps=[];for(var i=0;i<80;i++)ps.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25-0.1,r:Math.random()*1.5+0.5,a:Math.random()*0.5+0.1});}
+        init();
+        function draw(){ctx.clearRect(0,0,w,h);for(var i=0;i<ps.length;i++){var p=ps[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=w;if(p.x>w)p.x=0;if(p.y<0)p.y=h;if(p.y>h)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(0,184,255,'+p.a+')';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2);var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);g.addColorStop(0,'rgba(0,184,255,'+(p.a*0.3)+')');g.addColorStop(1,'rgba(0,184,255,0)');ctx.fillStyle=g;ctx.fill();}requestAnimationFrame(draw);}
+        draw();window.addEventListener('resize',function(){r();init();});
+    })();
+    </script>
+</body>
+</html>

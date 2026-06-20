@@ -1,0 +1,155 @@
+title = "Zephyr | 金山策"
+baseURL = 'https://zephyr-site.xyz'
+
+# Language
+locale = 'zh-cn'
+defaultContentLanguage = "zh-cn"
+enableEmoji = true
+buildFuture = true
+ignoreErrors = ["additional-script-loading-error"]
+
+theme = "hugo-blog-awesome"
+
+[services]
+  [services.googleAnalytics]
+    id = ''
+  [services.disqus]
+    shortname = ''
+
+[markup]
+  [markup.highlight]
+    noClasses = false
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 4
+    ordered = false
+
+############################## Chinese ################################
+[Languages.zh-cn]
+  label = "中文"
+  locale = "zh-cn"
+  contentDir = "content/zh"
+  weight = 1
+
+  [Languages.zh-cn.menu]
+  [[Languages.zh-cn.menu.main]]
+    pageRef="/"
+    name = '首页'
+    url = '/'
+    weight = 10
+  [[Languages.zh-cn.menu.main]]
+    pageRef="posts"
+    name = '博客'
+    url = '/posts/'
+    weight = 20
+  [[Languages.zh-cn.menu.main]]
+    pageRef="about"
+    name = '关于'
+    url = '/about/'
+    weight = 30
+  [[Languages.zh-cn.menu.main]]
+    pageRef="office"
+    name = '办公'
+    url = '/office/'
+    weight = 22
+  [[Languages.zh-cn.menu.main]]
+    pageRef="growth"
+    name = '成长'
+    url = '/growth/'
+    weight = 25
+  [[Languages.zh-cn.menu.main]]
+    pageRef="projects"
+    name = '项目'
+    url = '/projects/'
+    weight = 27
+
+  [Languages.zh-cn.params]
+    sitename = "ZEPHYR"
+    defaultColor = "dark"
+    description = "金山策的个人网站 — 代码、技术、生活"
+    mainSections = ['posts']
+    toc = true
+    tocOpen = false
+    goToTop = true
+    dateFormat = "2006年01月02日"
+    rssFeedDescription = "summary"
+
+  [Languages.zh-cn.params.author]
+    avatar = "logo.png"
+    intro = "金山策"
+    name = "金山策"
+    description = "大一 · CS · 中国计量大学 · 代码与生活的记录者"
+
+  [Languages.zh-cn.params.webmanifest]
+    name = "ZEPHYR"
+    short_name = "ZEPHYR"
+    start_url = "/"
+    theme_color = "#1e90ff"
+    background_color = "#131418"
+    display = "standalone"
+
+############################## English ################################
+[Languages.en]
+  label = "English"
+  locale = "en"
+  contentDir = "content/en"
+  weight = 2
+
+  [Languages.en.menu]
+  [[Languages.en.menu.main]]
+    pageRef="/"
+    name = 'Home'
+    url = '/'
+    weight = 10
+  [[Languages.en.menu.main]]
+    pageRef="posts"
+    name = 'Blog'
+    url = '/posts/'
+    weight = 20
+  [[Languages.en.menu.main]]
+    pageRef="about"
+    name = 'About'
+    url = '/about/'
+    weight = 30
+  [[Languages.en.menu.main]]
+    pageRef="office"
+    name = 'Office'
+    url = '/office/'
+    weight = 22
+  [[Languages.en.menu.main]]
+    pageRef="growth"
+    name = 'Growth'
+    url = '/growth/'
+    weight = 25
+  [[Languages.en.menu.main]]
+    pageRef="projects"
+    name = 'Projects'
+    url = '/projects/'
+    weight = 27
+
+  [Languages.en.params]
+    sitename = "ZEPHYR"
+    defaultColor = "dark"
+    description = "Personal site of Jinshan Ce — code, tech, life"
+    mainSections = ['posts']
+    toc = true
+    tocOpen = false
+    goToTop = true
+    dateFormat = "2 January 2006"
+    rssFeedDescription = "summary"
+
+  [Languages.en.params.author]
+    avatar = "logo.png"
+    intro = "Jinshan Ce (Zephyr)"
+    name = "Jinshan Ce"
+    description = "Freshman · CS · Cjlu · Code & Life"
+
+  [Languages.en.params.webmanifest]
+    name = "ZEPHYR"
+    short_name = "ZEPHYR"
+    start_url = "/"
+    theme_color = "#1e90ff"
+    background_color = "#131418"
+    display = "standalone"

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-cn" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>专注模式 | Zephyr</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --ice-blue: #00b8ff;
+  --ice-blue-dim: rgba(0,184,255,0.15);
+  --ice-blue-subtle: rgba(0,184,255,0.08);
+  --purple: #b86eff;
+  --text-primary: #e8e8ec;
+  --text-muted: #5a5a68;
+  --text-dim: #3a3a48;
+  --font-mono: 'JetBrains Mono','Fira Code','Cascadia Code','Consolas',monospace;
+}
+body {
+  background: #0a0a0d;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  width: 100vw; height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.focus-timer {
+  font-size: clamp(3rem, 12vw, 7rem);
+  font-weight: 300;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.focus-goal {
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.focus-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.focus-btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 6px 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.focus-btn:hover { border-color: var(--ice-blue-dim); color: var(--ice-blue); }
+.focus-btn.primary { border-color: var(--ice-blue-dim); color: var(--ice-blue); background: var(--ice-blue-subtle); }
+.focus-btn.primary:hover { background: var(--ice-blue-dim); }
+.focus-back {
+  position: fixed;
+  top: 20px; right: 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.focus-back:hover { color: var(--ice-blue); }
+.focus-label-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 2vw, 18px);
+  text-align: center;
+  outline: none;
+  width: 300px;
+  max-width: 80vw;
+  padding: 4px 0;
+  margin-bottom: 2rem;
+}
+.focus-label-input:focus { border-color: var(--ice-blue-dim); }
+</style>
+</head>
+<body>
+  <a class="focus-back" href="/office/" id="back-link">← 返回驾驶舱</a>
+  <div class="focus-timer" id="focus-timer">00:00:00</div>
+  <input class="focus-label-input" id="focus-goal" placeholder="当前目标 (如: 刷 ACM B 题)" maxlength="40" autofocus />
+  <div class="focus-controls">
+    <button class="focus-btn primary" id="focus-start">▶ 专注</button>
+    <button class="focus-btn" id="focus-pause" style="display:none">⏸ 暂停</button>
+    <button class="focus-btn" id="focus-reset">↺ 重置</button>
+    <button class="focus-btn" id="focus-finish">✓ 结束专注</button>
+  </div>
+
+<script>
+(function() {
+  const LS = key => JSON.parse(localStorage.getItem('zephyr_' + key) || 'null');
+  const LSS = (key, val) => localStorage.setItem('zephyr_' + key, JSON.stringify(val));
+
+  let timerState = LS('timer') || { running: false, elapsed: 0, label: 'ACM', startTime: null };
+  let interval = null;
+
+  function updateDisplay() {
+    const s = timerState.running ? timerState.elapsed + Math.floor((Date.now() - timerState.startTime) / 1000) : timerState.elapsed;
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    document.getElementById('focus-timer').textContent =
+      `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    document.title = `${document.getElementById('focus-timer').textContent} · 专注`;
+  }
+
+  function saveTimer() { LSS('timer', timerState); }
+
+  function tick() { if (timerState.running) { updateDisplay(); saveTimer(); } }
+
+  // Sync with storage events (cross-tab)
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'zephyr_timer') {
+      timerState = JSON.parse(e.newValue);
+      updateDisplay();
+    }
+  });
+
+  if (timerState.running) {
+    document.getElementById('focus-start').style.display = 'none';
+    document.getElementById('focus-pause').style.display = '';
+    interval = setInterval(tick, 1000);
+  }
+  updateDisplay();
+
+  document.getElementById('focus-start').addEventListener('click', function() {
+    if (!timerState.running) {
+      timerState.running = true;
+      timerState.startTime = Date.now();
+      timerState.label = document.getElementById('focus-goal').value || 'ACM';
+      this.style.display = 'none';
+      document.getElementById('focus-pause').style.display = '';
+      saveTimer();
+      interval = setInterval(tick, 1000);
+      // Update document title
+      document.title = `00:00:00 · ${timerState.label}`;
+    }
+  });
+
+  document.getElementById('focus-pause').addEventListener('click', function() {
+    if (timerState.running) {
+      timerState.elapsed += Math.floor((Date.now() - timerState.startTime) / 1000);
+      timerState.running = false;
+      timerState.startTime = null;
+      this.style.display = 'none';
+      document.getElementById('focus-start').style.display = '';
+      clearInterval(interval);
+      saveTimer();
+      updateDisplay();
+    }
+  });
+
+  document.getElementById('focus-reset').addEventListener('click', function() {
+    clearInterval(interval);
+    timerState = { running: false, elapsed: 0, label: 'ACM', startTime: null };
+    saveTimer();
+    document.getElementById('focus-start').style.display = '';
+    document.getElementById('focus-pause').style.display = 'none';
+    updateDisplay();
+  });
+
+  document.getElementById('focus-finish').addEventListener('click', function() {
+    // Stop and save final elapsed time, then go back
+    if (timerState.running) {
+      timerState.elapsed += Math.floor((Date.now() - timerState.startTime) / 1000);
+      timerState.running = false;
+      timerState.startTime = null;
+      clearInterval(interval);
+    }
+    saveTimer();
+    // Log the focus session
+    let logs = LS('logs') || [];
+    const goal = document.getElementById('focus-goal').value || '未命名';
+    const mins = Math.floor(timerState.elapsed / 60);
+    logs.unshift({ msg: `专注结束: ${goal} · ${mins}分钟`, time: new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' }) });
+    if (logs.length > 50) logs = logs.slice(0, 50);
+    LSS('logs', logs);
+    window.location.href = '/office/';
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    if (e.key === ' ' && e.target.tagName !== 'INPUT') {
+      e.preventDefault();
+      const start = document.getElementById('focus-start');
+      const pause = document.getElementById('focus-pause');
+      if (start.style.display !== 'none') start.click();
+      else pause.click();
+    }
+    if (e.key === 'Escape') { document.getElementById('focus-finish').click(); }
+  });
+
+  // Restore goal if saved
+  let savedGoal = LS('focusGoal');
+  if (savedGoal) document.getElementById('focus-goal').value = savedGoal;
+  document.getElementById('focus-goal').addEventListener('input', function() {
+    LSS('focusGoal', this.value);
+  });
+})();
+</script>
+</body>
+</html>

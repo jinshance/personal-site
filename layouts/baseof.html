@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default .Site.Language.Lang }}" class="{{ .Site.Params.defaultColor | default "dark" }}">
+    {{- partial "head.html" . -}}
+    <body data-theme = "{{ .Site.Params.defaultColor | default "dark" }}" class="notransition">
+        {{- partial "scriptsBodyStart.html" . -}}
+
+        <!-- Mountain silhouette background -->
+        <div class="mountain-scene" aria-hidden="true">
+            <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+                <!-- Back mountain range (lighter, further) -->
+                <path d="M0 400 L0 260 L80 240 L160 250 L240 200 L320 180 L400 195 L480 140 L560 160 L640 110 L720 130 L800 80 L880 100 L960 60 L1040 90 L1120 70 L1200 110 L1280 90 L1360 120 L1440 100 L1440 400 Z"
+                      fill="rgba(0, 184, 255, 0.08)" />
+                <!-- Front mountain range (darker, closer) -->
+                <path d="M0 400 L0 310 L80 300 L160 305 L240 270 L320 275 L400 245 L480 250 L560 210 L640 220 L720 190 L800 200 L880 175 L960 185 L1040 165 L1120 180 L1200 160 L1280 170 L1360 150 L1440 160 L1440 400 Z"
+                      fill="rgba(0, 184, 255, 0.04)" />
+                <!-- Foreground highlight peak (matches logo) -->
+                <path d="M640 400 L720 190 L800 200 L880 400 Z"
+                      fill="rgba(0, 184, 255, 0.02)" />
+            </svg>
+        </div>
+
+        <!-- Particle canvas -->
+        <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+        {{- partial "header.html" . -}}
+        {{- block "main" . }}{{- end }}
+        {{- partial "footer.html" . -}}
+        {{- partial "scriptsBodyEnd.html" . -}}
+
+        {{- partial "command-palette.html" . }}
+
+        <!-- Background image rotator -->
+        <div id="bg-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;background:var(--bg-primary);"></div>
+        <div id="bg-overlay2" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 2s ease;"></div>
+        <script>
+        (function() {
+            var seeds = ['mountain','forest','lake','ocean','aurora','valley','stars','river','clouds','night','landscape'];
+            var idx = 0;
+            var el1 = document.getElementById('bg-overlay');
+            var el2 = document.getElementById('bg-overlay2');
+            var active = 1;
+
+            function setBg() {
+                var url = 'url(https://picsum.photos/seed/' + seeds[idx] + '/1920/1080)';
+                if (active === 1) {
+                    el2.style.backgroundImage = url;
+                    el2.style.opacity = '0.25';
+                    el1.style.opacity = '0';
+                    active = 2;
+                } else {
+                    el1.style.backgroundImage = url;
+                    el1.style.opacity = '0.25';
+                    el2.style.opacity = '0';
+                    active = 1;
+                }
+                idx = (idx + 1) % seeds.length;
+            }
+            setBg();
+            setInterval(setBg, 20000);
+        })();
+        </script>
+
+        <!-- Particle animation -->
+        <script>
+        (function() {
+            const canvas = document.getElementById('particle-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w, h, particles = [];
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            const COUNT = 80;
+
+            function init() {
+                particles = [];
+                for (let i = 0; i < COUNT; i++) {
+                    particles.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h,
+                        vx: (Math.random() - 0.5) * 0.25,
+                        vy: (Math.random() - 0.5) * 0.25 - 0.1,
+                        r: Math.random() * 1.5 + 0.5,
+                        a: Math.random() * 0.5 + 0.1
+                    });
+                }
+            }
+            init();
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0) p.x = w;
+                    if (p.x > w) p.x = 0;
+                    if (p.y < 0) p.y = h;
+                    if (p.y > h) p.y = 0;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 184, 255, ${p.a})`;
+                    ctx.fill();
+
+                    // Glow
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+                    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
+                    grad.addColorStop(0, `rgba(0, 184, 255, ${p.a * 0.3})`);
+                    grad.addColorStop(1, 'rgba(0, 184, 255, 0)');
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+
+            // Re-init on resize
+            window.addEventListener('resize', () => { resize(); init(); });
+        })();
+        </script>
+    </body>
+</html>

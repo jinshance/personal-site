@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default .Site.Language.Lang }}" class="dark">
+{{- partial "head.html" . -}}
+<body data-theme="dark" class="notransition">
+{{- partial "scriptsBodyStart.html" . -}}
+{{- partial "header.html" . -}}
+<div class="wrapper">
+  <div class="projects-page">
+    <div class="page-header">
+      <span class="page-number-label">03</span>
+      <h1 class="projects-title">项目作品集</h1>
+      <p style="color:var(--text-muted);font-family:var(--font-mono);font-size:var(--text-xs);">
+        <span id="proj-count">0</span> 个项目
+        <span class="separator-dot" style="display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--text-dim);margin:0 6px;vertical-align:middle;"></span>
+        <a href="#" id="proj-add-btn" style="color:var(--ice-blue)!important;font-size:var(--text-xs);text-decoration:none!important;">➕ 添加项目</a>
+        <span class="separator-dot" style="display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--text-dim);margin:0 6px;vertical-align:middle;"></span>
+        <a href="#" id="proj-edit-toggle" style="color:var(--text-muted)!important;font-size:var(--text-xs);text-decoration:none!important;">✏️ 管理</a>
+        <span class="separator-dot" style="display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--text-dim);margin:0 6px;vertical-align:middle;"></span>
+        <a href="#" id="proj-trash-btn" style="color:var(--text-muted)!important;font-size:var(--text-xs);text-decoration:none!important;">🗑️ 回收站 <span id="trash-count" style="color:#ff6b6b;"></span></a>
+        <span class="separator-dot" style="display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--text-dim);margin:0 6px;vertical-align:middle;"></span>
+        <a href="#" id="proj-export-btn" style="color:var(--text-muted)!important;font-size:var(--text-xs);text-decoration:none!important;">💾 导出</a>
+      </p>
+    </div>
+
+    <div class="projects-grid" id="projects-grid"></div>
+
+    <!-- Trash section -->
+    <div id="trash-section" style="display:none;margin-top:2rem;">
+      <h2 style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);border-bottom:1px solid rgba(255,255,255,0.04);padding-bottom:6px;margin-bottom:10px;">🗑️ 回收站</h2>
+      <div id="trash-list"></div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="proj-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+      <div style="background:#1a1a20;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:20px;width:440px;max-width:90vw;">
+        <h3 style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);margin-bottom:12px;" id="proj-modal-title">添加项目</h3>
+
+        <!-- GitHub import -->
+        <div style="display:flex;gap:4px;margin-bottom:8px;">
+          <input id="proj-gh-url" placeholder="GitHub 仓库链接 (可选,自动导入)" style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:5px 8px;color:var(--text-muted);font-family:var(--font-mono);font-size:11px;outline:none;">
+          <button id="proj-gh-import" style="background:var(--ice-blue-subtle);border:1px solid var(--ice-blue-dim);border-radius:4px;color:var(--ice-blue);font-family:var(--font-mono);font-size:11px;padding:4px 10px;cursor:pointer;">导入</button>
+        </div>
+
+        <input id="proj-name" placeholder="项目名称 *" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:6px 8px;color:var(--text-secondary);font-family:var(--font-mono);font-size:13px;outline:none;margin-bottom:6px;">
+        <input id="proj-url" placeholder="链接 (https://...)" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:6px 8px;color:var(--text-secondary);font-family:var(--font-mono);font-size:13px;outline:none;margin-bottom:6px;">
+        <textarea id="proj-desc" placeholder="项目描述" style="width:100%;min-height:50px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:6px 8px;color:var(--text-secondary);font-family:var(--font-mono);font-size:13px;outline:none;margin-bottom:6px;resize:vertical;"></textarea>
+        <input id="proj-stack" placeholder="技术栈 (逗号分隔)" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:6px 8px;color:var(--text-secondary);font-family:var(--font-mono);font-size:13px;outline:none;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button id="proj-modal-cancel" style="font-family:var(--font-mono);font-size:12px;padding:4px 12px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text-muted);cursor:pointer;">取消</button>
+          <button id="proj-modal-save" style="font-family:var(--font-mono);font-size:12px;padding:4px 12px;border-radius:4px;border:1px solid var(--ice-blue-dim);background:var(--ice-blue-subtle);color:var(--ice-blue);cursor:pointer;">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{- partial "footer.html" . -}}
+{{- partial "scriptsBodyEnd.html" . -}}
+{{- partial "command-palette.html" . }}
+
+<script>
+(function(){
+  const LS = key => JSON.parse(localStorage.getItem('zephyr_' + key) || 'null');
+  const LSS = (key, val) => localStorage.setItem('zephyr_' + key, JSON.stringify(val));
+
+  const icons = ['📝','🌐','🤖','🧠','⚡','📊','🎯','🔧','📦','🚀','💻','🛠️'];
+
+  let projects = LS('projects') || [];
+  let trash = LS('projTrash') || [];
+
+  // Default 4 projects on first visit
+  if (!projects.length && !trash.length) {
+    projects = [
+      { id: 1, name: 'zephyr-blog', url: 'https://github.com/jinshance/zephyr-blog', desc: 'Vite + React 全栈博客平台', stack: ['Java','React','Vite','MySQL'], icon: '📝' },
+      { id: 2, name: 'personal-site', url: 'https://zephyr-site.xyz', desc: 'Hugo 作品集站点', stack: ['Hugo','SCSS','Netlify'], icon: '🌐' },
+      { id: 3, name: 'Hermes Agent', url: 'https://github.com/NousResearch/hermes-agent', desc: '参与开源 AI Agent 框架', stack: ['Python','AI Agent'], icon: '🤖' },
+      { id: 4, name: 'Hindsight', url: 'https://github.com/jinshance/hindsight', desc: '本地 AI 记忆系统后端', stack: ['Python','FastAPI','Ollama'], icon: '🧠' },
+    ];
+    LSS('projects', projects);
+  }
+
+  let editingId = null;
+  let editMode = false;
+
+  function saveAll() { LSS('projects', projects); LSS('projTrash', trash); }
+
+  function render() {
+    const grid = document.getElementById('projects-grid');
+    document.getElementById('proj-count').textContent = projects.length;
+    const tc = document.getElementById('trash-count');
+    tc.textContent = trash.length ? `(${trash.length})` : '';
+
+    grid.innerHTML = projects.map(p => `
+      <div class="project-hex" style="position:relative;">
+        <div style="position:absolute;top:6px;right:6px;display:flex;gap:3px;z-index:2;">
+          <span onclick="zephyrEditProj(${p.id})" title="编辑" style="font-size:10px;cursor:pointer;color:var(--ice-blue);background:rgba(0,0,0,0.6);padding:2px 5px;border-radius:3px;border:1px solid rgba(0,184,255,0.15);">✏️</span>
+          <span onclick="zephyrTrashProj(${p.id})" title="删除到回收站" style="font-size:10px;cursor:pointer;color:#ff6b6b;background:rgba(0,0,0,0.6);padding:2px 5px;border-radius:3px;border:1px solid rgba(255,107,107,0.15);">🗑️</span>
+        </div>
+        <a href="${p.url}" target="_blank" rel="noopener" style="text-decoration:none!important;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;color:inherit!important;">
+          <div class="ph-icon">${p.icon || '📦'}</div>
+          <div class="ph-name">${p.name}</div>
+          <div class="ph-desc">${p.desc}</div>
+          <div class="ph-stack">${(p.stack||[]).map(s => `<span>${s}</span>`).join('')}</div>
+        </a>
+      </div>
+    `).join('');
+
+    // Add card
+    grid.innerHTML += `
+      <div onclick="zephyrOpenAddModal()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed rgba(255,255,255,0.06);border-radius:10px;min-height:180px;cursor:pointer;transition:all 0.2s;background:transparent;" onmouseover="this.style.borderColor='var(--ice-blue-dim)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'">
+        <div style="font-size:24px;color:var(--text-dim);">+</div>
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-dim);margin-top:4px;">添加项目</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-top:2px;">支持 GitHub 导入</div>
+      </div>`;
+
+    // Trash
+    renderTrash();
+  }
+
+  function renderTrash() {
+    const el = document.getElementById('trash-list');
+    const section = document.getElementById('trash-section');
+    if (!trash.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    el.innerHTML = trash.map((p, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;font-size:var(--text-xs);background:rgba(255,255,255,0.02);margin-bottom:4px;">
+        <span style="color:var(--text-dim);">${p.icon||'📦'}</span>
+        <span style="flex:1;color:var(--text-muted);text-decoration:line-through;">${p.name}</span>
+        <span onclick="zephyrRestoreProj(${i})" style="cursor:pointer;color:var(--ice-blue);font-family:var(--font-mono);">↩ 恢复</span>
+        <span onclick="zephyrPermanentDel(${i})" style="cursor:pointer;color:#ff6b6b;font-family:var(--font-mono);">✕ 永久删除</span>
+      </div>
+    `).join('');
+  }
+
+  // --- Actions ---
+  window.zephyrOpenAddModal = function() {
+    editingId = null;
+    document.getElementById('proj-modal-title').textContent = '添加项目';
+    ['proj-name','proj-url','proj-desc','proj-stack','proj-gh-url'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('proj-modal').style.display = 'flex';
+  };
+
+  window.zephyrEditProj = function(id) {
+    const p = projects.find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById('proj-modal-title').textContent = '编辑项目';
+    document.getElementById('proj-name').value = p.name;
+    document.getElementById('proj-url').value = p.url || '';
+    document.getElementById('proj-desc').value = p.desc || '';
+    document.getElementById('proj-stack').value = (p.stack||[]).join(', ');
+    document.getElementById('proj-gh-url').value = '';
+    document.getElementById('proj-modal').style.display = 'flex';
+  };
+
+  window.zephyrTrashProj = function(id) {
+    const idx = projects.findIndex(x => x.id === id);
+    if (idx === -1) return;
+    trash.unshift(projects[idx]);
+    projects.splice(idx, 1);
+    saveAll();
+    render();
+  };
+
+  window.zephyrRestoreProj = function(i) {
+    projects.push(trash[i]);
+    trash.splice(i, 1);
+    saveAll();
+    render();
+  };
+
+  window.zephyrPermanentDel = function(i) {
+    if (!confirm(`永久删除「${trash[i].name}」？`)) return;
+    trash.splice(i, 1);
+    saveAll();
+    render();
+  };
+
+  // GitHub import
+  document.getElementById('proj-gh-import').addEventListener('click', async function() {
+    const url = document.getElementById('proj-gh-url').value.trim();
+    const match = url.match(/github\.com\/([^\/]+)\/([^\/\s?#]+)/);
+    if (!match) { alert('请输入有效的 GitHub 仓库链接'); return; }
+    const [_, owner, repo] = match;
+    this.textContent = '导入中...';
+    try {
+      const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+      if (!r.ok) throw new Error('获取失败');
+      const data = await r.json();
+      document.getElementById('proj-name').value = data.name || repo;
+      document.getElementById('proj-url').value = data.html_url || url;
+      document.getElementById('proj-desc').value = data.description || '';
+      const lang = data.language || '';
+      const topics = (data.topics || []).join(', ');
+      document.getElementById('proj-stack').value = topics || lang;
+      this.textContent = '✅ 已导入';
+      setTimeout(() => { this.textContent = '导入'; }, 2000);
+    } catch(e) {
+      this.textContent = '❌ 失败';
+      setTimeout(() => { this.textContent = '导入'; }, 2000);
+    }
+  });
+
+  // Modal controls
+  document.getElementById('proj-modal-cancel').addEventListener('click', function() {
+    document.getElementById('proj-modal').style.display = 'none';
+  });
+
+  document.getElementById('proj-modal-save').addEventListener('click', function() {
+    const name = document.getElementById('proj-name').value.trim();
+    if (!name) return;
+    const data = {
+      name,
+      url: document.getElementById('proj-url').value.trim(),
+      desc: document.getElementById('proj-desc').value.trim(),
+      stack: document.getElementById('proj-stack').value.split(',').map(s => s.trim()).filter(Boolean),
+      icon: icons[Math.floor(Math.random() * icons.length)],
+    };
+    if (editingId) {
+      const p = projects.find(x => x.id === editingId);
+      if (p) Object.assign(p, data);
+    } else {
+      data.id = Date.now();
+      projects.push(data);
+    }
+    saveAll();
+    document.getElementById('proj-modal').style.display = 'none';
+    render();
+  });
+
+  // Trash toggle
+  document.getElementById('proj-trash-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const section = document.getElementById('trash-section');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Edit mode toggle
+  document.getElementById('proj-edit-toggle').addEventListener('click', function(e) {
+    e.preventDefault();
+    editMode = !editMode;
+    this.textContent = editMode ? '✅ 完成' : '✏️ 管理';
+    this.style.color = editMode ? 'var(--ice-blue)!important' : 'var(--text-muted)!important';
+    render();
+  });
+
+  // Export
+  document.getElementById('proj-export-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const blob = new Blob([JSON.stringify({projects, trash}, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'zephyr-projects-backup.json';
+    a.click();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default .Site.Language.Lang }}" class="dark">
+{{- partial "head.html" . -}}
+<body data-theme="dark" class="notransition" style="overflow-y:auto;">
+{{- partial "scriptsBodyStart.html" . -}}
+{{- partial "header.html" . -}}
+
+<div class="office-page">
+  <div class="office-grid">
+
+    <!-- ===== LEFT SIDEBAR ===== -->
+    <aside class="office-sidebar-left">
+      <div class="office-section">
+        <div class="greeting-line" id="greeting-text" style="font-family:var(--font-mono);font-size:var(--text-lg);font-weight:600;color:var(--text-primary);margin-bottom:2px;"></div>
+        <div class="date-line" id="date-text" style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-muted);"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="office-section">
+        <div class="office-section-title">📊 今日数据</div>
+        <div class="stat-item"><span class="stat-label">GitHub 提交</span><span class="stat-value" id="gh-commits">--</span></div>
+        <div class="stat-item"><span class="stat-label">专注时长</span><span class="stat-value" id="study-time">0h 0m</span></div>
+        <div class="stat-item"><span class="stat-label">待办完成</span><span class="stat-value" id="done-count">0</span></div>
+      </div>
+
+      <!-- Quick countdown -->
+      <div class="office-section">
+        <div class="office-section-title">⏳ 倒计时</div>
+        <div id="countdown-list">
+          <div style="color:var(--text-dim);font-size:var(--text-xs);">点击下方 + 添加</div>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:6px;">
+          <input id="cd-input" placeholder="名称 YYYY-MM-DD" style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:3px;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;padding:3px 6px;outline:none;">
+          <button id="cd-add-btn" style="background:var(--ice-blue-subtle);border:1px solid var(--ice-blue-dim);border-radius:3px;color:var(--ice-blue);font-family:var(--font-mono);font-size:11px;padding:3px 8px;cursor:pointer;">+</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="office-main">
+
+      <!-- Timer -->
+      <div class="office-section">
+        <div class="office-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>⏱️ 专注计时</span>
+          <a href="/focus/" target="_blank" style="font-size:var(--text-xs);color:var(--ice-blue) !important;text-decoration:none !important;">全屏专注 →</a>
+        </div>
+        <div class="timer-widget">
+          <span class="timer-display" id="timer-display">00:00:00</span>
+          <button class="timer-btn" id="timer-start">▶ 开始</button>
+          <button class="timer-btn" id="timer-pause" style="display:none">⏸ 暂停</button>
+          <button class="timer-btn" id="timer-reset">↺ 重置</button>
+          <input id="timer-goal" placeholder="目标..." style="width:120px;background:transparent;border:1px solid rgba(255,255,255,0.04);border-radius:3px;color:var(--text-muted);font-family:var(--font-mono);font-size:11px;padding:2px 6px;outline:none;">
+        </div>
+      </div>
+
+      <!-- Todos - blank canvas -->
+      <div class="office-section" style="flex:1;">
+        <div class="office-section-title">📋 我的待办</div>
+
+        <!-- Tag filter bar -->
+        <div id="tag-bar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+          <button class="tag-filter active" data-tag="all" style="font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:3px;border:none;background:var(--ice-blue-subtle);color:var(--ice-blue);cursor:pointer;">全部</button>
+        </div>
+
+        <!-- Todo list -->
+        <div id="todo-list"></div>
+
+        <!-- Add todo -->
+        <div style="display:flex;gap:4px;margin-top:6px;">
+          <input id="todo-input" placeholder="+ 添加待办，回车保存" style="flex:1;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.06);color:var(--text-secondary);font-family:var(--font-mono);font-size:var(--text-xs);padding:6px 0;outline:none;">
+          <button id="todo-tag-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:3px;color:var(--text-muted);font-family:var(--font-mono);font-size:10px;padding:2px 8px;cursor:pointer;">标签</button>
+        </div>
+      </div>
+
+      <!-- Memo -->
+      <div class="office-section">
+        <div class="office-section-title">📝 备忘录</div>
+        <textarea id="code-memo" placeholder="写点什么..." style="width:100%;min-height:50px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.04);border-radius:4px;color:var(--text-secondary);font-family:var(--font-mono);font-size:var(--text-xs);padding:6px 8px;resize:vertical;outline:none;"></textarea>
+      </div>
+
+    </main>
+
+    <!-- ===== RIGHT SIDEBAR ===== -->
+    <aside class="office-sidebar-right">
+      <div class="office-section link-group">
+        <div class="office-section-title">🔧 快捷链接</div>
+        <a class="link-item" href="https://github.com/jinshance" target="_blank" rel="noopener"><span>🐙</span> GitHub <span class="li-abbr">gh</span></a>
+        <a class="link-item" href="https://app.netlify.com" target="_blank" rel="noopener"><span>🌐</span> Netlify <span class="li-abbr">net</span></a>
+        <a class="link-item" href="http://localhost:8888" target="_blank" rel="noopener"><span>🧠</span> Ollama <span class="li-abbr">ai</span></a>
+        <a class="link-item" href="#" target="_blank" rel="noopener"><span>⚔️</span> 刷题 OJ <span class="li-abbr">oj</span></a>
+        <a class="link-item" href="https://docs.qq.com" target="_blank" rel="noopener"><span>📄</span> 云文档 <span class="li-abbr">doc</span></a>
+        <a class="link-item" href="https://tool.lu" target="_blank" rel="noopener"><span>🧮</span> 开发工具 <span class="li-abbr">tool</span></a>
+      </div>
+
+      <!-- Manage tags -->
+      <div class="office-section">
+        <div class="office-section-title">🏷️ 管理标签</div>
+        <div id="tag-manager"></div>
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <input id="new-tag-input" placeholder="新标签名" style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:3px;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;padding:2px 6px;outline:none;">
+          <button id="add-tag-btn" style="background:var(--ice-blue-subtle);border:1px solid var(--ice-blue-dim);border-radius:3px;color:var(--ice-blue);font-family:var(--font-mono);font-size:11px;padding:2px 8px;cursor:pointer;">+</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="office-bottom">
+    <div class="office-bottom-grid">
+      <div class="office-section">
+        <div class="office-section-title">🐙 GitHub 动态</div>
+        <div id="github-feed"></div>
+      </div>
+      <div class="office-section">
+        <div class="office-section-title">📋 操作记录</div>
+        <div id="activity-log"></div>
+      </div>
+      <div class="office-section">
+        <div class="office-section-title">📈 今日简报</div>
+        <div class="mini-chart" id="mini-chart"></div>
+        <div style="display:flex;gap:16px;font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;">
+          <span>待办: <span id="brief-total" style="color:var(--text-primary);font-family:var(--font-mono);">0</span></span>
+          <span>✓完成: <span id="brief-done" style="color:var(--ice-blue);font-family:var(--font-mono);">0</span></span>
+          <span>提交: <span id="brief-gh" style="color:var(--text-primary);font-family:var(--font-mono);">0</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{- partial "footer.html" . -}}
+{{- partial "scriptsBodyEnd.html" . -}}
+
+<script>
+(function(){
+  const LS = key => JSON.parse(localStorage.getItem('zephyr_' + key) || 'null');
+  const LSS = (key, val) => localStorage.setItem('zephyr_' + key, JSON.stringify(val));
+
+  // ===== 1. GREETING =====
+  (function(){
+    const now = new Date();
+    const h = now.getHours();
+    const greet = h < 6 ? '凌晨好' : h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好';
+    document.getElementById('greeting-text').textContent = greet + '，金山策';
+    document.getElementById('date-text').textContent = now.toLocaleDateString('zh-CN', {
+      year:'numeric', month:'long', day:'numeric', weekday:'long'
+    });
+  })();
+
+  // ===== 2. COUNTDOWNS (user-managed) =====
+  let countdowns = LS('countdowns') || [];
+  function renderCountdowns() {
+    const now = new Date();
+    const el = document.getElementById('countdown-list');
+    el.innerHTML = countdowns.map((c, i) => {
+      const d = new Date(c.date);
+      const days = Math.ceil((d - now) / 86400000);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:var(--text-xs);">
+        <span style="color:var(--text-secondary);">${c.name}</span>
+        <span style="font-family:var(--font-mono);color:${days<=7?'#ff6b6b':'var(--ice-blue)'};font-weight:600;">${days>0?days+'天':'到期'}</span>
+        <span onclick="zephyrDelCd(${i})" style="color:var(--text-dim);cursor:pointer;font-size:10px;">✕</span>
+      </div>`;
+    }).join('');
+    if (!countdowns.length) el.innerHTML = '<div style="color:var(--text-dim);font-size:var(--text-xs);">暂无倒计时</div>';
+  }
+  window.zephyrDelCd = function(i) { countdowns.splice(i,1); LSS('countdowns', countdowns); renderCountdowns(); };
+  document.getElementById('cd-add-btn').addEventListener('click', function() {
+    const val = document.getElementById('cd-input').value.trim();
+    const match = val.match(/^(.+?)\s+(\d{4}-\d{2}-\d{2})$/);
+    if (match) { countdowns.push({name:match[1].trim(), date:match[2]}); LSS('countdowns', countdowns); renderCountdowns(); document.getElementById('cd-input').value=''; }
+  });
+  document.getElementById('cd-input').addEventListener('keydown', function(e) { if(e.key==='Enter') document.getElementById('cd-add-btn').click(); });
+  renderCountdowns();
+
+  // ===== 3. TODOS (fully user-managed) =====
+  let todos = LS('todos') || [];
+  let tags = LS('tags') || ['开发', '学业', '算法', '生活'];
+  let currentTagFilter = 'all';
+
+  function saveAll() { LSS('todos', todos); LSS('tags', tags); }
+
+  function renderTagBar() {
+    const bar = document.getElementById('tag-bar');
+    bar.innerHTML = `<button class="tag-filter${currentTagFilter==='all'?' active':''}" data-tag="all" style="font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:3px;border:none;${currentTagFilter==='all'?'background:var(--ice-blue-subtle);color:var(--ice-blue);':'background:transparent;color:var(--text-muted);'}cursor:pointer;">全部</button>`;
+    tags.forEach(t => {
+      bar.innerHTML += `<button class="tag-filter${currentTagFilter===t?' active':''}" data-tag="${t}" style="font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:3px;border:none;${currentTagFilter===t?'background:var(--ice-blue-subtle);color:var(--ice-blue);':'background:transparent;color:var(--text-muted);'}cursor:pointer;">${t}</button>`;
+    });
+    bar.querySelectorAll('.tag-filter').forEach(btn => {
+      btn.addEventListener('click', function() {
+        currentTagFilter = this.dataset.tag;
+        renderTagBar();
+        renderTodos();
+      });
+    });
+  }
+
+  // Tag manager (right sidebar)
+  function renderTagManager() {
+    const el = document.getElementById('tag-manager');
+    el.innerHTML = tags.map(t => `<span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--font-mono);font-size:10px;padding:1px 6px;border-radius:3px;background:var(--ice-blue-subtle);color:var(--ice-blue);margin:2px;">${t} <span onclick="zephyrDelTag('${t}')" style="cursor:pointer;opacity:0.6;">✕</span></span>`).join('');
+  }
+  window.zephyrDelTag = function(t) {
+    tags = tags.filter(x => x !== t);
+    // Reassign todos with this tag to '生活'
+    todos.forEach(todo => { if (todo.tag === t) todo.tag = '生活'; });
+    if (currentTagFilter === t) currentTagFilter = 'all';
+    saveAll(); renderTagBar(); renderTagManager(); renderTodos();
+  };
+  document.getElementById('add-tag-btn').addEventListener('click', function() {
+    const t = document.getElementById('new-tag-input').value.trim();
+    if (t && !tags.includes(t)) { tags.push(t); saveAll(); renderTagBar(); renderTagManager(); }
+    document.getElementById('new-tag-input').value = '';
+  });
+  document.getElementById('new-tag-input').addEventListener('keydown', function(e) { if(e.key==='Enter') document.getElementById('add-tag-btn').click(); });
+
+  function renderTodos() {
+    const filtered = currentTagFilter === 'all' ? todos : todos.filter(t => t.tag === currentTagFilter);
+    const el = document.getElementById('todo-list');
+    el.innerHTML = filtered.map((t, i) => {
+      const globalIdx = todos.indexOf(t);
+      const overdue = t.due && new Date(t.due) < new Date() && !t.done;
+      return `<div class="todo-item" draggable="true" style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;font-size:var(--text-xs);transition:background 0.1s;">
+        <span class="td-check${t.done?' done':''}" data-idx="${globalIdx}" style="width:13px;height:13px;border-radius:50%;border:1.5px solid ${t.done?'var(--ice-blue)':'var(--text-dim)'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;${t.done?'background:var(--ice-blue);':''}">${t.done?'✓':''}</span>
+        <span style="flex:1;color:${t.done?'var(--text-dim)':'var(--text-secondary)'};${t.done?'text-decoration:line-through;':''}">${t.title}</span>
+        <span style="font-size:9px;padding:1px 5px;border-radius:3px;font-family:var(--font-mono);background:var(--ice-blue-subtle);color:var(--ice-blue);">${t.tag}</span>
+        ${t.due ? `<span style="font-family:var(--font-mono);font-size:9px;color:${overdue?'#ff6b6b':'var(--text-dim)'};">${new Date(t.due).toLocaleDateString('zh-CN')}</span>` : ''}
+        <span onclick="zephyrDelTodo(${globalIdx})" style="color:var(--text-dim);cursor:pointer;font-size:10px;opacity:0;transition:opacity 0.1s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">✕</span>
+      </div>`;
+    }).join('');
+    if (!filtered.length) el.innerHTML = '<div style="color:var(--text-dim);font-size:var(--text-xs);padding:12px 0;text-align:center;">还没有待办，输入上面添加 ✏️</div>';
+
+    // Checkbox handlers
+    el.querySelectorAll('.td-check').forEach(el => {
+      el.addEventListener('click', function() {
+        const idx = parseInt(this.dataset.idx);
+        todos[idx].done = !todos[idx].done;
+        saveAll(); renderTodos(); updateBrief();
+        log(`✓ ${todos[idx].done?'完成':'取消'}: ${todos[idx].title}`);
+      });
+    });
+
+    updateBrief();
+  }
+
+  window.zephyrDelTodo = function(i) {
+    const title = todos[i].title;
+    todos.splice(i, 1);
+    saveAll(); renderTodos();
+    log(`删除: ${title}`);
+  };
+
+  // Add todo
+  document.getElementById('todo-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value.trim()) {
+      let title = this.value.trim();
+      let due = '';
+      let tag = tags.length ? tags[0] : '生活';
+      // Parse due date: "xxx 2026-07-01"
+      const dueMatch = title.match(/(\d{4}-\d{2}-\d{2})/);
+      if (dueMatch) { due = dueMatch[1]; title = title.replace(dueMatch[0], '').trim(); }
+      // Parse tag: "xxx #标签"
+      const tagMatch = title.match(/#(\S+)/);
+      if (tagMatch) { const t = tagMatch[1]; if (tags.includes(t)) tag = t; title = title.replace(tagMatch[0], '').trim(); }
+      todos.push({ title, tag, due, done: false, createdAt: Date.now() });
+      saveAll(); renderTodos(); renderTagBar();
+      log(`新增: ${title}`);
+      this.value = '';
+    }
+  });
+
+  // Tag button shows a quick tag picker
+  document.getElementById('todo-tag-btn').addEventListener('click', function() {
+    const input = document.getElementById('todo-input');
+    const val = input.value;
+    // Simple: append the first tag as hashtag
+    if (tags.length > 0) {
+      input.value = val + ' #' + tags[0];
+      input.focus();
+    }
+  });
+
+  renderTagBar();
+  renderTagManager();
+  renderTodos();
+
+  // ===== 4. TIMER =====
+  let timerState = LS('timer') || { running: false, elapsed: 0, goal: '', startTime: null };
+  let timerInterval = null;
+
+  function updateTimerDisplay() {
+    const s = timerState.running ? timerState.elapsed + Math.floor((Date.now() - timerState.startTime)/1000) : timerState.elapsed;
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    document.getElementById('timer-display').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    document.getElementById('study-time').textContent = m>=60 ? `${Math.floor(m/60)}h ${m%60}m` : `${m}m`;
+  }
+
+  document.getElementById('timer-start').addEventListener('click', function() {
+    if (!timerState.running) {
+      timerState.running = true;
+      timerState.startTime = Date.now();
+      timerState.goal = document.getElementById('timer-goal').value || '';
+      this.style.display = 'none';
+      document.getElementById('timer-pause').style.display = '';
+      LSS('timer', timerState);
+      timerInterval = setInterval(() => { updateTimerDisplay(); LSS('timer', timerState); }, 1000);
+      log(`计时开始: ${timerState.goal || '无目标'}`);
+    }
+  });
+
+  document.getElementById('timer-pause').addEventListener('click', function() {
+    if (timerState.running) {
+      timerState.elapsed += Math.floor((Date.now() - timerState.startTime)/1000);
+      timerState.running = false;
+      timerState.startTime = null;
+      this.style.display = 'none';
+      document.getElementById('timer-start').style.display = '';
+      clearInterval(timerInterval);
+      LSS('timer', timerState);
+      updateTimerDisplay();
+      log(`暂停: ${Math.floor(timerState.elapsed/60)}m`);
+    }
+  });
+
+  document.getElementById('timer-reset').addEventListener('click', function() {
+    clearInterval(timerInterval);
+    timerState = { running: false, elapsed: 0, goal: '', startTime: null };
+    LSS('timer', timerState);
+    document.getElementById('timer-start').style.display = '';
+    document.getElementById('timer-pause').style.display = 'none';
+    updateTimerDisplay();
+  });
+
+  if (timerState.running) {
+    document.getElementById('timer-start').style.display = 'none';
+    document.getElementById('timer-pause').style.display = '';
+    timerInterval = setInterval(() => { updateTimerDisplay(); LSS('timer', timerState); }, 1000);
+  }
+  updateTimerDisplay();
+
+  // Cross-tab sync
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'zephyr_timer') { timerState = JSON.parse(e.newValue); updateTimerDisplay(); }
+    if (e.key === 'zephyr_todos') { todos = JSON.parse(e.newValue); renderTodos(); renderTagBar(); }
+    if (e.key === 'zephyr_tags') { tags = JSON.parse(e.newValue); renderTagBar(); renderTagManager(); }
+  });
+
+  // ===== 5. GITHUB =====
+  async function fetchGitHub() {
+    try {
+      const r = await fetch('https://api.github.com/users/jinshance/events/public?per_page=5');
+      if (!r.ok) throw new Error('fail');
+      const events = await r.json();
+      const feed = document.getElementById('github-feed');
+      feed.innerHTML = events.map(e => {
+        const repo = e.repo.name.split('/')[1];
+        const msg = e.type === 'PushEvent' ? (e.payload.commits?.[0]?.message || 'push') : e.type;
+        const time = new Date(e.created_at).toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' });
+        return `<div class="log-item" style="display:flex;align-items:flex-start;gap:5px;padding:2px 0;font-size:var(--text-xs);"><span class="log-dot" style="width:4px;height:4px;border-radius:50%;background:var(--text-dim);margin-top:5px;flex-shrink:0;"></span><span class="log-text" style="color:var(--text-muted);line-height:1.4;"><strong style="color:var(--text-secondary);">${repo}</strong> ${msg}</span><span class="log-time" style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);white-space:nowrap;margin-left:auto;">${time}</span></div>`;
+      }).join('');
+      const pushCount = events.filter(e => e.type==='PushEvent').length;
+      document.getElementById('gh-commits').textContent = pushCount;
+      document.getElementById('brief-gh').textContent = pushCount;
+    } catch(e) {
+      document.getElementById('github-feed').innerHTML = '<div style="color:var(--text-dim);font-size:var(--text-xs);">暂不可用</div>';
+    }
+  }
+  fetchGitHub();
+
+  // ===== 6. LOGS =====
+  let logs = LS('logs') || [];
+  function log(msg) {
+    logs.unshift({ msg, time: new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' }) });
+    if (logs.length > 30) logs = logs.slice(0, 30);
+    LSS('logs', logs);
+    renderLogs();
+  }
+  function renderLogs() {
+    const el = document.getElementById('activity-log');
+    el.innerHTML = logs.map(l => `<div class="log-item" style="display:flex;align-items:flex-start;gap:5px;padding:2px 0;font-size:var(--text-xs);"><span class="log-dot" style="width:4px;height:4px;border-radius:50%;background:var(--text-dim);margin-top:5px;flex-shrink:0;"></span><span class="log-text" style="color:var(--text-muted);">${l.msg}</span><span class="log-time" style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);white-space:nowrap;margin-left:auto;">${l.time}</span></div>`).join('');
+    if (!logs.length) el.innerHTML = '<div style="color:var(--text-dim);font-size:var(--text-xs);">暂无记录</div>';
+  }
+  renderLogs();
+
+  // ===== 7. BRIEF =====
+  function updateBrief() {
+    const total = todos.length;
+    const done = todos.filter(t => t.done).length;
+    document.getElementById('brief-total').textContent = total;
+    document.getElementById('brief-done').textContent = done;
+    document.getElementById('done-count').textContent = done;
+  }
+
+  // ===== 8. CHART =====
+  (function(){
+    const ch = document.getElementById('mini-chart');
+    const data = LS('chartData') || [2,5,3,7,4,6,8];
+    ch.innerHTML = data.map((v,i) => `<div class="bar" style="width:8px;background:${i===data.length-1?'var(--ice-blue)':'var(--ice-blue-dim)'};border-radius:2px 2px 0 0;height:${v*5}px;transition:height 0.3s;"></div>`).join('');
+  })();
+
+  // ===== 9. MEMO auto-save =====
+  (function(){
+    const saved = LS('memo');
+    if (saved) document.getElementById('code-memo').value = saved;
+    document.getElementById('code-memo').addEventListener('input', function() { LSS('memo', this.value); });
+  })();
+
+  // Expose to global for command palette
+  window.zephyrOffice = {
+    addTodo: function(title, tag) {
+      const t = tag || (tags.length ? tags[0] : '生活');
+      todos.push({ title, tag: t, due: '', done: false, createdAt: Date.now() });
+      saveAll(); renderTodos(); renderTagBar();
+      log(`新增: ${title}`);
+    },
+    startTimer: function(goal) {
+      if (document.getElementById('timer-goal')) document.getElementById('timer-goal').value = goal || '';
+      document.getElementById('timer-start')?.click();
+    },
+    stopTimer: function() { document.getElementById('timer-pause')?.click(); },
+  };
+
+  log('驾驶舱已开启');
+})();
+</script>
+</body>
+</html>

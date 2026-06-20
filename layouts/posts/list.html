@@ -1,0 +1,200 @@
+{{- define "main" -}}
+<div class="wrapper list-page">
+    <header class="header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+        <h1 class="header-title center" style="margin:0;">{{ .Title }}</h1>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <a href="#" id="blog-edit-toggle" style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--ice-blue)!important;text-decoration:none!important;">✏️ 写文章</a>
+            <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:var(--text-xs);" id="local-post-count"></span>
+        </div>
+    </header>
+
+    <main class="page-content" aria-label="Content" id="blog-list-content">
+        {{ range .Pages.GroupByDate "2006" }}
+        {{ $year := .Key }}
+        <h2 class="post-year">{{ $year }}</h2>
+        {{ range .Pages }}
+        {{ partial "postCard" . }}
+        {{ end }}
+        {{ end }}
+    </main>
+
+    <div id="local-posts" style="margin-top:1rem;"></div>
+</div>
+
+<!-- Editor Modal -->
+<div id="blog-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:#1c1c24;border:1px solid rgba(0,184,255,0.12);border-radius:10px;padding:24px 28px;width:680px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 0 40px rgba(0,0,0,0.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-family:var(--font-mono);font-size:16px;color:var(--text-primary);margin:0;" id="blog-modal-title">✏️ 写文章</h3>
+      <div style="display:flex;gap:8px;">
+        <label style="font-family:var(--font-mono);font-size:12px;padding:4px 10px;border-radius:4px;border:1px solid rgba(0,184,255,0.15);background:rgba(0,184,255,0.06);color:var(--ice-blue);cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+          📂 导入 .md
+          <input type="file" id="md-import" accept=".md" style="display:none;">
+        </label>
+      </div>
+    </div>
+    <input id="post-title" placeholder="文章标题" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:10px 12px;color:#e0e0e8;font-family:var(--font-sans);font-size:17px;font-weight:600;outline:none;margin-bottom:8px;">
+    <input id="post-desc" placeholder="一句话描述（可选）" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:8px 12px;color:#b0b0bc;font-family:var(--font-sans);font-size:14px;outline:none;margin-bottom:8px;">
+    <input id="post-tags" placeholder="标签（逗号分隔，如: Java,后端,学习笔记）" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:8px 12px;color:#b0b0bc;font-family:var(--font-sans);font-size:14px;outline:none;margin-bottom:10px;">
+    <textarea id="post-content" placeholder="在这里写正文…… 支持 Markdown 格式" style="width:100%;min-height:280px;background:rgba(10,10,13,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:12px 14px;color:#d0d0dc;font-family:var(--font-mono);font-size:14px;line-height:1.7;outline:none;resize:vertical;margin-bottom:14px;"></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="blog-modal-cancel" style="font-family:var(--font-sans);font-size:13px;padding:6px 16px;border-radius:5px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text-muted);cursor:pointer;">取消</button>
+      <button id="blog-modal-save" style="font-family:var(--font-sans);font-size:13px;font-weight:600;padding:6px 20px;border-radius:5px;border:none;background:var(--ice-blue);color:#0a0a0d;cursor:pointer;">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Viewer Modal -->
+<div id="blog-viewer" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:100;align-items:flex-start;justify-content:center;padding:6vh 0;overflow-y:auto;backdrop-filter:blur(4px);">
+  <div style="background:#181820;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:32px 36px;width:720px;max-width:92vw;position:relative;">
+    <button id="viewer-close" style="position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.04);border:none;border-radius:4px;color:var(--text-dim);font-size:16px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div id="viewer-content"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LS = key => JSON.parse(localStorage.getItem('zephyr_' + key) || 'null');
+  const LSS = (key, val) => localStorage.setItem('zephyr_' + key, JSON.stringify(val));
+
+  let posts = LS('blogPosts') || [];
+  let editingPostId = null;
+
+  // Parse markdown frontmatter
+  function parseMD(text) {
+    const result = { title: '', desc: '', tags: [], content: text };
+    const fmMatch = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+    if (fmMatch) {
+      const fm = fmMatch[1];
+      result.content = fmMatch[2].trim();
+      const titleMatch = fm.match(/title:\s*["']?(.+?)["']?(\n|$)/);
+      if (titleMatch) result.title = titleMatch[1].trim();
+      const descMatch = fm.match(/description:\s*["']?(.+?)["']?(\n|$)/);
+      if (descMatch) result.desc = descMatch[1].trim();
+      const tagMatch = fm.match(/tags:\s*\[([^\]]*)\]/);
+      if (tagMatch) result.tags = tagMatch[1].split(',').map(s => s.trim().replace(/["']/g,'')).filter(Boolean);
+      const tagMatch2 = fm.match(/tags:\s*\n([\s\S]*?)(\n\w|$)/);
+      if (tagMatch2) {
+        const lines = tagMatch2[1].split('\n').map(l => l.replace(/^\s*-\s*/,'').trim().replace(/["']/g,'')).filter(Boolean);
+        if (lines.length) result.tags = lines;
+      }
+    }
+    return result;
+  }
+
+  // MD file import
+  document.getElementById('md-import')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const text = ev.target.result;
+      const parsed = parseMD(text);
+      document.getElementById('post-title').value = parsed.title || file.name.replace('.md','');
+      document.getElementById('post-desc').value = parsed.desc || '';
+      document.getElementById('post-tags').value = parsed.tags.join(', ');
+      document.getElementById('post-content').value = parsed.content;
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
+
+  function renderLocalPosts() {
+    const el = document.getElementById('local-posts');
+    const countEl = document.getElementById('local-post-count');
+    if (countEl) countEl.textContent = posts.length ? `+${posts.length} 本地` : '';
+    if (!posts.length) { el.innerHTML = ''; return; }
+
+    el.innerHTML = '<h2 class="post-year" style="margin-top:1.5rem;">本地文章</h2>' +
+      posts.map(p => {
+        const date = new Date(p.createdAt).toLocaleDateString('zh-CN');
+        return `<div class="post-item" style="display:flex;align-items:center;padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);">
+          <div class="post-item-date" style="min-width:96px;color:var(--text-dim);font-family:var(--font-mono);font-size:12px;">${date}</div>
+          <div class="post-item-title" style="flex:1;margin:0;border:0;padding:0;">
+            <a href="#" class="local-post-link" data-id="${p.id}" style="color:var(--text-secondary);text-decoration:none;">${p.title}</a>
+          </div>
+          <div style="display:flex;gap:6px;margin-left:8px;">
+            <span onclick="zephyrEditPost(${p.id})" style="font-size:13px;cursor:pointer;color:var(--ice-blue);">✏️</span>
+            <span onclick="zephyrDelPost(${p.id})" style="font-size:13px;cursor:pointer;color:#ff6b6b;">🗑️</span>
+          </div>
+        </div>`;
+      }).join('');
+
+    el.querySelectorAll('.local-post-link').forEach(a => {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        const id = parseInt(this.dataset.id);
+        const p = posts.find(x => x.id === id);
+        if (!p) return;
+        document.getElementById('viewer-content').innerHTML = `
+          <h2 style="font-size:22px;color:var(--text-primary);margin-bottom:6px;">${p.title}</h2>
+          <div style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">${new Date(p.createdAt).toLocaleDateString('zh-CN')}${p.desc ? ' · '+p.desc : ''}</div>
+          <div style="color:#c0c0cc;font-size:15px;line-height:1.8;white-space:pre-wrap;">${p.content}</div>
+        `;
+        document.getElementById('blog-viewer').style.display = 'flex';
+      });
+    });
+  }
+
+  window.zephyrEditPost = function(id) {
+    const p = posts.find(x => x.id === id);
+    if (!p) return;
+    editingPostId = id;
+    document.getElementById('blog-modal-title').textContent = '✏️ 编辑文章';
+    document.getElementById('post-title').value = p.title;
+    document.getElementById('post-desc').value = p.desc || '';
+    document.getElementById('post-tags').value = (p.tags||[]).join(', ');
+    document.getElementById('post-content').value = p.content || '';
+    document.getElementById('blog-modal').style.display = 'flex';
+  };
+
+  window.zephyrDelPost = function(id) {
+    const p = posts.find(x => x.id === id);
+    if (p && !confirm(`删除「${p.title}」？`)) return;
+    posts = posts.filter(x => x.id !== id);
+    LSS('blogPosts', posts);
+    renderLocalPosts();
+  };
+
+  document.getElementById('blog-edit-toggle')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    editingPostId = null;
+    document.getElementById('blog-modal-title').textContent = '✏️ 写文章';
+    ['post-title','post-desc','post-tags','post-content'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('blog-modal').style.display = 'flex';
+  });
+
+  document.getElementById('blog-modal-cancel')?.addEventListener('click', function() {
+    document.getElementById('blog-modal').style.display = 'none';
+  });
+
+  document.getElementById('blog-modal-save')?.addEventListener('click', function() {
+    const title = document.getElementById('post-title').value.trim();
+    if (!title) { alert('请输入标题'); return; }
+    const data = {
+      title,
+      desc: document.getElementById('post-desc').value.trim(),
+      tags: document.getElementById('post-tags').value.split(',').map(s => s.trim()).filter(Boolean),
+      content: document.getElementById('post-content').value,
+    };
+    if (editingPostId) {
+      const p = posts.find(x => x.id === editingPostId);
+      if (p) Object.assign(p, data);
+    } else {
+      data.id = Date.now();
+      data.createdAt = Date.now();
+      posts.unshift(data);
+    }
+    LSS('blogPosts', posts);
+    document.getElementById('blog-modal').style.display = 'none';
+    renderLocalPosts();
+  });
+
+  document.getElementById('viewer-close')?.addEventListener('click', function() {
+    document.getElementById('blog-viewer').style.display = 'none';
+  });
+
+  renderLocalPosts();
+})();
+</script>
+{{- end -}}

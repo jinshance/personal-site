@@ -1,0 +1,156 @@
+<!-- Global Ctrl+K Command Palette -->
+<div class="cmd-overlay" id="cmd-overlay">
+  <div class="cmd-palette">
+    <div class="cmd-input-wrap">
+      <input type="text" id="cmd-input" placeholder="输入命令... (Ctrl+K 切换)" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="cmd-results" id="cmd-results"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const commands = [
+    { icon: '🏠', name: '首页', desc: '跳转到首页', action: () => window.location.href = '/' },
+    { icon: '💼', name: '办公驾驶舱', desc: '跳转到 /office/', action: () => window.location.href = '/office/', alias: 'office' },
+    { icon: '🎯', name: '专注模式', desc: '打开专注模式', action: () => window.open('/focus/', '_blank'), alias: 'focus' },
+    { icon: '🐙', name: 'GitHub', desc: '打开 GitHub 个人页', action: () => window.open('https://github.com/jinshance', '_blank'), alias: 'gh' },
+    { icon: '🌐', name: 'Netlify', desc: '打开 Netlify 面板', action: () => window.open('https://app.netlify.com', '_blank'), alias: 'netlify' },
+    { icon: '📝', name: '博客', desc: '跳转到博客列表', action: () => window.location.href = '/posts/', alias: 'blog' },
+    { icon: '📖', name: '关于我', desc: '跳转到关于页面', action: () => window.location.href = '/pages/about/', alias: 'about' },
+    { icon: '📈', name: '成长轨迹', desc: '跳转到成长轨迹', action: () => window.location.href = '/growth/', alias: 'growth' },
+    { icon: '⚡', name: '项目作品集', desc: '跳转到项目页', action: () => window.location.href = '/projects/', alias: 'projects' },
+    { icon: '🧠', name: 'Ollama AI', desc: '打开本地 AI 面板', action: () => window.open('http://localhost:8888', '_blank'), alias: 'ollama' },
+    { icon: '⚔️', name: 'ACM OJ', desc: '打开刷题 OJ', action: () => window.open('#', '_blank'), alias: 'oj' },
+    { icon: '🔌', name: 'Clash', desc: '打开代理管理', action: () => window.open('http://127.0.0.1:7890', '_blank'), alias: 'clash' },
+    { icon: '📚', name: '教务系统', desc: '打开教务系统', action: () => window.open('#', '_blank'), alias: 'jw' },
+    { icon: '📊', name: '成绩查询', desc: '打开成绩查询', action: () => window.open('#', '_blank'), alias: 'score' },
+    { icon: '📖', name: '图书馆', desc: '打开图书馆', action: () => window.open('#', '_blank'), alias: 'lib' },
+    { icon: '📄', name: '云文档', desc: '打开腾讯文档', action: () => window.open('https://docs.qq.com', '_blank'), alias: 'docs' },
+    { icon: '🌍', name: '翻译', desc: '打开谷歌翻译', action: () => window.open('https://translate.google.com', '_blank'), alias: 'tr' },
+    { icon: '🧮', name: '在线工具', desc: '打开工具合集', action: () => window.open('https://tool.lu', '_blank'), alias: 'tools' },
+  ];
+
+  // Todo/command actions
+  const dynamicCommands = [
+    {
+      icon: '➕', name: '新增待办', desc: '添加新任务 (格式: todo 内容 #标签)',
+      match: /^todo\s+/i, alias: 'td',
+      action: (input) => {
+        const parts = input.replace(/^todo\s+/i, '').trim();
+        const tagMatch = parts.match(/#(\S+)/);
+        let title = parts, tag = '生活';
+        if (tagMatch) { tag = tagMatch[1]; title = parts.replace(tagMatch[0], '').trim(); }
+        if (window.zephyrOffice?.addTodo) window.zephyrOffice.addTodo(title, tag);
+        else alert('请在驾驶舱页面使用此功能');
+      }
+    },
+    {
+      icon: '⏱️', name: '开始计时', desc: '启动计时器 (格式: timer start ACM/开发/学业)',
+      match: /^timer\s+start\s*/i, alias: 'ts',
+      action: (input) => {
+        const label = input.replace(/^timer\s+start\s*/i, '').trim() || 'ACM';
+        if (window.zephyrOffice?.startTimer) window.zephyrOffice.startTimer(label);
+        else { window.open('/focus/', '_blank'); }
+      }
+    },
+    {
+      icon: '⏹️', name: '停止计时', desc: '停止当前计时器',
+      match: /^timer\s+stop$/i, alias: 'tp',
+      action: () => { if (window.zephyrOffice?.stopTimer) window.zephyrOffice.stopTimer(); }
+    },
+  ];
+
+  let overlay = document.getElementById('cmd-overlay');
+  let input = document.getElementById('cmd-input');
+  let results = document.getElementById('cmd-results');
+  let visible = false;
+  let selectedIdx = -1;
+
+  function togglePalette() {
+    visible = !visible;
+    overlay.classList.toggle('show', visible);
+    if (visible) { input.focus(); input.value = ''; filterCommands(''); }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); togglePalette(); }
+    if (visible && e.key === 'Escape') { togglePalette(); }
+  });
+
+  function filterCommands(query) {
+    const q = query.toLowerCase().trim();
+    const allCmds = [...commands];
+    let filtered;
+
+    if (!q) {
+      filtered = allCmds.slice(0, 8);
+    } else {
+      // Check dynamic commands first
+      for (const dc of dynamicCommands) {
+        if (dc.match.test(q) || dc.alias === q) {
+          results.innerHTML = `<div class="cmd-item selected" style="cursor:default;">
+            <span class="cmd-icon">${dc.icon}</span>
+            <span class="cmd-name">${dc.name}</span>
+            <span class="cmd-desc">${dc.desc}</span>
+          </div>`;
+          selectedIdx = -1;
+          return;
+        }
+      }
+
+      filtered = allCmds.filter(c => {
+        const search = c.name + ' ' + c.desc + ' ' + (c.alias || '');
+        return search.toLowerCase().includes(q);
+      }).slice(0, 10);
+    }
+
+    selectedIdx = -1;
+    results.innerHTML = filtered.length
+      ? filtered.map((c, i) => `<div class="cmd-item${i === 0 ? ' selected' : ''}" data-idx="${i}">
+          <span class="cmd-icon">${c.icon}</span>
+          <span class="cmd-name">${c.name}</span>
+          <span class="cmd-desc">${c.desc}</span>
+          ${c.alias ? `<span class="cmd-shortcut">${c.alias}</span>` : ''}
+        </div>`).join('')
+      : '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:13px;">没有匹配的命令</div>';
+
+    // Click handlers
+    results.querySelectorAll('.cmd-item').forEach(el => {
+      el.addEventListener('click', function() {
+        const idx = parseInt(this.dataset.idx);
+        filtered[idx]?.action();
+        togglePalette();
+      });
+    });
+  }
+
+  input.addEventListener('input', function() { filterCommands(this.value); });
+
+  input.addEventListener('keydown', function(e) {
+    const items = results.querySelectorAll('.cmd-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIdx = Math.min(selectedIdx + 1, items.length - 1);
+      items.forEach((el, i) => el.classList.toggle('selected', i === selectedIdx));
+      if (items[selectedIdx]) items[selectedIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIdx = Math.max(selectedIdx - 1, 0);
+      items.forEach((el, i) => el.classList.toggle('selected', i === selectedIdx));
+      if (items[selectedIdx]) items[selectedIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      const q = input.value.trim().toLowerCase();
+      // Check dynamic
+      for (const dc of dynamicCommands) {
+        if (dc.match.test(q) || dc.alias === q) { dc.action(input.value.trim()); togglePalette(); return; }
+      }
+      // Static
+      const allCmds = [...commands];
+      const filtered = q ? allCmds.filter(c => (c.name + c.desc + (c.alias||'')).toLowerCase().includes(q)) : allCmds.slice(0,8);
+      const idx = selectedIdx >= 0 ? selectedIdx : 0;
+      if (filtered[idx]) { filtered[idx].action(); togglePalette(); }
+    }
+  });
+})();
+</script>

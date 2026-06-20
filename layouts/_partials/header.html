@@ -1,0 +1,62 @@
+<div class="navbar" role="navigation">
+    <nav class="menu" aria-label="Main Navigation">
+        <a href="{{ .Site.Home.Permalink }}" class="logo">
+            {{ $logo := resources.Get "logo.png" }}
+            {{ with $logo }}
+            {{ $logoResized := $logo.Resize "36x36 center" }}
+            <img src="{{ $logoResized.RelPermalink }}" alt="ZEPHYR" width="32" height="32" style="vertical-align:middle; border-radius:4px;">
+            {{ end }}
+        </a>
+        <input type="checkbox" id="menu-trigger" class="menu-trigger" />
+        <label for="menu-trigger">
+            <span class="menu-icon">
+                {{ partial "svgs/menu.svg" (dict "height" 25 "width" 25) . }}
+            </span>
+        </label>
+
+        <div class="trigger">
+            <ul class="trigger-container">
+                {{ $currentPage := . }}
+                {{ range .Site.Menus.main }}
+                <li>
+                    <a class="menu-link {{ if or ($currentPage.IsMenuCurrent "main" .)
+                        ($currentPage.HasMenuCurrent "main" .) }}active{{ end }}" href="{{ .URL }}">
+                        {{ .Name }}
+                    </a>
+                    {{ if .HasChildren }}
+                    <ul>
+                        {{ range .Children }}
+                        <li>
+                            <a class="menu-link {{ if $currentPage.IsMenuCurrent "main" . }}active{{ end }}"
+                                href="{{ .URL }}">
+                                {{ .Name }}
+                            </a>
+                        </li>
+                        {{ end }}
+                    </ul>
+                    {{ end }}
+                </li>
+                {{ end }}
+                <li class="menu-separator">
+                    <span>|</span>
+                </li>
+                <!-- Language List -->
+                {{ if .IsTranslated }}
+                <li>
+                    <select aria-label="Select Language" class="lang-list" id="select-language" onchange="location = this.value;">
+                        {{ $pageLang := .Page.Lang }}
+                        {{ range .Page.AllTranslations }}
+                            <option id="{{ .Language.Lang }}" value="{{ .Permalink }}"{{ if eq $pageLang .Lang }} selected{{ end }}>
+                                {{ .Language.LanguageCode | upper }}
+                            </option>
+                        {{ end }}
+                    </select>
+                </li>
+                <li class="menu-separator">
+                    <span>|</span>
+                </li>
+                {{ end }}
+            </ul>
+        </div>
+    </nav>
+</div>
